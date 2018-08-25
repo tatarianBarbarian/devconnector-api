@@ -16,7 +16,7 @@ router.get("/test", (req, res) => {
     });
 });
 
-// @route   GET api/users/register
+// @route   POST api/users/register
 // @desc    Registration of user
 // @acces   Public access
 
@@ -55,6 +55,33 @@ router.post("/register", (req, res) => {
                 .catch(err => res.status(400).json("Database error"));
         }
     });
+});
+
+// @route   POST api/users/login
+// @desc    Login user / Returning JWT Token
+// @acces   Public access
+// TODO: Add bad creditinals error instaed of wrong email or password
+router.post("/login", (req, res) => {
+    const { email, password } = req.body;
+
+    //Find user
+    User.findOne({ email })
+        .then(user => {
+            if (!user) {
+                res.status(404).json({ email: "User not found" });
+            }
+            bcrypt
+                .compare(password, user.password)
+                .then(isMatch => {
+                    if (isMatch) {
+                        res.json({ message: "Success" });
+                    } else {
+                        return res.status(400).json("Error password");
+                    }
+                })
+                .catch(err => res.status(400).json("Check failed"));
+        })
+        .catch(err => res.status(400).json("Database error"));
 });
 
 module.exports = router;
