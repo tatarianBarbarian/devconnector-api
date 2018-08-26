@@ -2,6 +2,8 @@ const express = require("express");
 const router = express.Router();
 const gravatar = require("gravatar");
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const { secretOrKey } = require("../../config/keys");
 
 //Load user model
 const User = require("../../models/User");
@@ -74,14 +76,39 @@ router.post("/login", (req, res) => {
                 .compare(password, user.password)
                 .then(isMatch => {
                     if (isMatch) {
-                        res.json({ message: "Success" });
+                        //User matches
+
+                        //Create JWT payload
+                        const payload = {
+                            id: user.id,
+                            name: user.name,
+                            avatar: user.avatar
+                        };
+
+                        //Sign token
+
+                        jwt.sign(
+                            payload,
+                            secretOrKey,
+                            { expiresIn: 3600 },
+                            (err, token) => {
+                                res.json({
+                                    success: true,
+                                    token: `Bearer ${token}`
+                                });
+                            }
+                        );
                     } else {
-                        return res.status(400).json("Error password");
+                        return res
+                            .status(400)
+                            .json({ message: "Error password" });
                     }
                 })
-                .catch(err => res.status(400).json("Check failed"));
+                .catch(err =>
+                    res.status(400).json({ message: "Check failed" })
+                );
         })
-        .catch(err => res.status(400).json("Database error"));
+        .catch(err => res.status(400).json({ message: "Database error" }));
 });
 
 module.exports = router;
